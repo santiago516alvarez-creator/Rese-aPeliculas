@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CineReseñas</title>
+  <link rel="stylesheet" href="estilos.css">
+  <script src="dist/index.js" defer></script>
+</head>
+<body>
+  <header class="cabecera">
+    <h1 class="marca">🎬 CineReseñas</h1>
+    <form id="form-busqueda" class="busqueda">
+      <input type="search" id="buscador" placeholder="Buscar por nombre...">
+      <button type="submit">Buscar</button>
+    </form>
+    <nav class="menu">
+      <button data-vista="perfil">Inicio sesión</button>
+      <button data-vista="inicio">Lobby</button>
+      <button data-vista="catalogo">Cartelera</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- VISTA: INICIO -->
+    <section id="vista-inicio" class="vista">
+      <h2>Últimos estrenos</h2>
+      <div id="grilla-estrenos" class="grilla"></div>
+
+      <h2>Promociones</h2>
+      <div id="lista-promos" class="grilla"></div>
+
+      <h2>Confitería</h2>
+      <div id="lista-confiteria" class="grilla"></div>
+
+      <h2>Se van pronto</h2>
+      <div id="grilla-finalizando" class="grilla"></div>
+    </section>
+
+    <!-- VISTA: CATÁLOGO -->
+    <section id="vista-catalogo" class="vista oculta">
+      <div class="filtros">
+        <button data-filtro="">Todas</button>
+        <button data-filtro="recomendadas">Recomendadas</button>
+        <button data-filtro="masvistas">Lo más visto</button>
+        <button data-filtro="favoritos">Favoritos</button>
+        <button data-filtro="espera">Lista de espera</button>
+        <select id="select-genero">
+          <option value="">Géneros</option>
+        </select>
+      </div>
+      <div id="grilla-catalogo" class="grilla"></div>
+    </section>
+
+    <!-- VISTA: DETALLE + RESEÑAS -->
+    <section id="vista-detalle" class="vista oculta">
+      <button id="btn-volver">← Volver</button>
+      <h2 id="detalle-titulo"></h2>
+      <p id="detalle-sinopsis"></p>
+      <h3>Reseñas</h3>
+      <ul id="lista-resenias"></ul>
+      <form id="form-resenia" class="form-resenia">
+        <label>Puntuación (1 a 10)
+          <input type="number" id="resenia-puntos" min="1" max="10" required>
+        </label>
+        <label>Comentario
+          <textarea id="resenia-comentario" rows="3"></textarea>
+        </label>
+        <button type="submit">Enviar reseña</button>
+        <p id="mensaje-resenia"></p>
+      </form>
+    </section>
+
+    <!-- VISTA: PERFIL -->
+    <section id="vista-perfil" class="vista oculta">
+      <div class="perfil-cabecera">
+        <img id="perfil-foto" src="img/perfil1.jpg" alt="Foto de perfil">
+        <div>
+          <h2 id="perfil-nombre"></h2>
+          <p id="perfil-nick"></p>
+          <p id="perfil-email"></p>
+          <p id="perfil-edad"></p>
+          <button type="button">Editar perfil</button>
+        </div>
+      </div>
+      <h3>Actividad reciente</h3>
+      <div id="perfil-contadores" class="contadores"></div>
+      <table>
+        <thead><tr><th>Película</th><th>Puntos</th><th>Comentario</th><th>Fecha</th></tr></thead>
+        <tbody id="perfil-actividad"></tbody>
+      </table>
+    </section>
+  </main>
+
+  <footer class="pie">© 2026 CineReseñas · Proyecto académico</footer>
+</body>
+</html>
