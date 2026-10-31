@@ -1,0 +1,22 @@
+{
+  "name": "catalogo-resenas",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build:server": "tsc -p servidor/tsconfig.json",
+    "build:front": "tsc -p tsconfig.json",
+    "build": "npm run build:server && npm run build:front",
+    "start": "node servidor/build/index.js"
+  },
+  "dependencies": {
+    "dotenv": "^18.0.9",
+    "express": "^5.3.0",
+    "mysql2": "^3.24.6"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2"
+  }
+}
