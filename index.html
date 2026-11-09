@@ -9,15 +9,27 @@
 </head>
 <body>
   <header class="cabecera">
-    <h1 class="marca">🎬 CineReseñas</h1>
+    <!-- Logotipo clickeable para ir al Lobby -->
+    <h1 class="marca"><a href="#inicio">🎬 CineReseñas</a></h1>
+    
     <form id="form-busqueda" class="busqueda">
       <input type="search" id="buscador" placeholder="Buscar por nombre...">
       <button type="submit">Buscar</button>
     </form>
+    
     <nav class="menu">
-      <button data-vista="perfil">Inicio sesión</button>
       <button data-vista="inicio">Lobby</button>
       <button data-vista="catalogo">Cartelera</button>
+
+      <div id="nav-autenticado" class="nav-grupo">
+        <button data-vista="perfil">Mi perfil</button>
+        <button id="btn-cerrar-sesion" type="button" class="btn-secundario">Cerrar sesión</button>
+      </div>
+
+      <div id="nav-invitado" class="nav-grupo oculta">
+        <button data-vista="login" class="btn-secundario">Iniciar sesión</button>
+        <button data-vista="registro">Crear cuenta</button>
+      </div>
     </nav>
   </header>
 
@@ -52,11 +64,68 @@
       <div id="grilla-catalogo" class="grilla"></div>
     </section>
 
+    <!-- VISTA: LOGIN -->
+    <section id="vista-login" class="vista oculta">
+      <div class="form-contenedor">
+        <h2>Iniciar Sesión</h2>
+        <form id="form-login">
+          <label>Correo electrónico
+            <input type="email" id="login-email" required placeholder="tu@email.com">
+          </label>
+          <label>Contraseña
+            <input type="password" id="login-password" required placeholder="••••••••">
+          </label>
+          <button type="submit">Ingresar</button>
+          <p id="mensaje-login" class="mensaje-form"></p>
+          <p class="form-footer">¿No tienes cuenta? <a href="#registro">Regístrate aquí</a></p>
+        </form>
+      </div>
+    </section>
+
+    <!-- VISTA: REGISTRO -->
+    <section id="vista-registro" class="vista oculta">
+      <div class="form-contenedor">
+        <h2>Crear Cuenta</h2>
+        <form id="form-registro">
+          <label>Nombre
+            <input type="text" id="reg-nombre" required placeholder="Tu nombre">
+          </label>
+          <label>Nombre de usuario (nick)
+            <input type="text" id="reg-nick" required placeholder="ej. cinefilo99">
+          </label>
+          <label>Correo electrónico
+            <input type="email" id="reg-email" required placeholder="tu@email.com">
+          </label>
+          <label>Contraseña
+            <input type="password" id="reg-password" required placeholder="••••••••">
+          </label>
+          <label>Edad
+            <input type="number" id="reg-edad" min="1" max="120" placeholder="25">
+          </label>
+          <button type="submit">Registrarse</button>
+          <p id="mensaje-registro" class="mensaje-form"></p>
+          <p class="form-footer">¿Ya tienes cuenta? <a href="#login">Inicia sesión</a></p>
+        </form>
+      </div>
+    </section>
+
     <!-- VISTA: DETALLE + RESEÑAS -->
     <section id="vista-detalle" class="vista oculta">
       <button id="btn-volver">← Volver</button>
-      <h2 id="detalle-titulo"></h2>
-      <p id="detalle-sinopsis"></p>
+      <div class="detalle-cabecera-grid">
+        <img id="detalle-poster" src="" alt="Póster" class="detalle-poster-img">
+        <div>
+          <h2 id="detalle-titulo"></h2>
+          <p id="detalle-meta" class="meta-info"></p>
+          <p id="detalle-sinopsis"></p>
+          
+          <div class="acciones-interaccion">
+            <button id="btn-accion-like" type="button">❤️ Me gusta</button>
+            <button id="btn-accion-espera" type="button">🔖 Watchlist</button>
+          </div>
+        </div>
+      </div>
+
       <h3>Reseñas</h3>
       <ul id="lista-resenias"></ul>
       <form id="form-resenia" class="form-resenia">
@@ -80,18 +149,28 @@
           <p id="perfil-nick"></p>
           <p id="perfil-email"></p>
           <p id="perfil-edad"></p>
-          <button type="button">Editar perfil</button>
         </div>
       </div>
-      <h3>Actividad reciente</h3>
+
       <div id="perfil-contadores" class="contadores"></div>
-      <table>
-        <thead><tr><th>Película</th><th>Puntos</th><th>Comentario</th><th>Fecha</th></tr></thead>
-        <tbody id="perfil-actividad"></tbody>
-      </table>
+
+      <div class="perfil-pestanas">
+        <button type="button" class="pestana activa" data-tab="resenias">Mis Reseñas</button>
+        <button type="button" class="pestana" data-tab="favoritos">Favoritas</button>
+        <button type="button" class="pestana" data-tab="espera">Watchlist</button>
+      </div>
+
+      <div class="contenedor-tabla-perfil">
+        <table id="tabla-perfil">
+          <thead>
+            <tr id="perfil-th-row"><th>Película</th><th>Puntos</th><th>Comentario</th><th>Fecha</th></tr>
+          </thead>
+          <tbody id="perfil-actividad"></tbody>
+        </table>
+      </div>
     </section>
   </main>
 
   <footer class="pie">© 2026 CineReseñas · Proyecto académico</footer>
 </body>
-</html>
+</html> 
