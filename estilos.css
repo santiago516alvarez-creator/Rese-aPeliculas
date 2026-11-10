@@ -93,3 +93,61 @@ th { background: #2a2a40; color: #ffb703; }
 .marca a { color: inherit; text-decoration: none; }
 .fila-link td { cursor: pointer; }
 .fila-link:hover td { background: #2a2a40; }
+
+.perfil-foto { 
+  width: 120px; 
+  height: 120px; 
+  border-radius: 50%; 
+  object-fit: cover; 
+}
+
+.selector-avatares { 
+  display: flex; 
+  flex-wrap: wrap; 
+  gap: 10px; 
+  margin-top: 10px; 
+}
+
+.avatar-opcion { 
+  width: 64px; 
+  height: 64px; 
+  border-radius: 50%; 
+  object-fit: cover; 
+  cursor: pointer; 
+  border: 2px solid transparent; 
+}
+
+.avatar-opcion:hover { 
+  border-color: #ffb400; 
+}
+
+.perfil-foto { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; }
+.selector-avatares { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+.avatar-opcion { width: 56px; height: 56px; }
+.avatar-opcion:hover { border-color: #ffb400; }
+
+.selector-avatares[hidden],
+#form-nombre[hidden] { 
+  display: none; 
+}
+
+.selector-avatares { 
+  display: flex; 
+  flex-wrap: wrap; 
+  gap: 10px; 
+  margin-top: 10px; 
+  max-width: 420px; 
+}
+
+.avatar-opcion { 
+  width: 56px; 
+  height: 56px; 
+  border-radius: 50%; 
+  object-fit: cover; 
+  cursor: pointer; 
+  border: 2px solid transparent; 
+}
+
+.avatar-opcion:hover { 
+  border-color: #ffb400; 
+}

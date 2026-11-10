@@ -182,6 +182,42 @@ app.get('/api/usuarios/:id/perfil', requiereSesion, async (req, res) => {
   }
 });
 
+// Cambia el nombre y/o el avatar del propio usuario
+app.put('/api/usuarios/:id', requiereSesion, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (id !== res.locals.usuarioId) {
+      res.status(403).json({ error: 'No autorizado' });
+      return;
+    }
+    const { nombre, foto_perfil } = req.body;
+
+    if (nombre !== undefined && (typeof nombre !== 'string' || nombre.trim() === '' || nombre.length > 30)) {
+      res.status(400).json({ error: 'Nombre inválido' });
+      return;
+    }
+    if (foto_perfil !== undefined && !/^img\/avatares\/.*\.(jpg|jpeg|png)$/i.test(foto_perfil)) {
+      res.status(400).json({ error: 'Avatar inválido' });
+      return;
+    }
+
+    await pool.execute(
+      'UPDATE usuarios SET nombre = COALESCE(?, nombre), foto_perfil = COALESCE(?, foto_perfil) WHERE id = ?',
+      [nombre?.trim() ?? null, foto_perfil ?? null, id]
+    );
+
+    const [filas] = await pool.execute(
+      'SELECT id, nick, nombre, email, foto_perfil, edad FROM usuarios WHERE id = ?',
+      [id]
+    );
+    const usuarios = filas as any[];
+    res.json(usuarios[0]);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Error al actualizar el perfil' });
+  }
+});
+
 // Pestañas del perfil: reseñas, favoritos y lista de espera
 app.get('/api/usuarios/:id/pestana/:tab', requiereSesion, async (req, res) => {
   try {
@@ -190,7 +226,6 @@ app.get('/api/usuarios/:id/pestana/:tab', requiereSesion, async (req, res) => {
       res.status(403).json({ error: 'No autorizado' });
       return;
     }
-    // Consultas fijas: el nombre de la pestaña solo elige cuál usar, nunca se concatena
     const consultas: Record<string, string> = {
       resenias: `SELECT p.id AS pelicula_id, p.titulo, r.puntuacion, r.comentario, r.fecha
                  FROM resenias r JOIN peliculas p ON p.id = r.pelicula_id
@@ -249,7 +284,7 @@ app.post('/api/auth/registro', async (req, res) => {
     }
     const [r] = await pool.execute<ResultSetHeader>(
       'INSERT INTO usuarios (nick, nombre, email, password, edad, foto_perfil) VALUES (?, ?, ?, ?, ?, ?)',
-      [nick.trim(), nombre.trim(), email.trim(), password, Number(edad) || 20, 'img/perfil1.jpg']
+      [nick.trim(), nombre.trim(), email.trim(), password, Number(edad) || 20, 'img/avatares/Avatar1.jpeg']
     );
     const [filas] = await pool.execute(
       'SELECT id, nick, nombre, email, foto_perfil, edad FROM usuarios WHERE id = ?', [r.insertId]
@@ -267,7 +302,6 @@ app.post('/api/auth/registro', async (req, res) => {
   }
 });
 
-// Sirve para comprobar al arrancar si el token guardado sigue siendo válido
 app.get('/api/auth/sesion', requiereSesion, async (_req, res) => {
   try {
     const [filas] = await pool.execute(
@@ -284,7 +318,6 @@ app.get('/api/auth/sesion', requiereSesion, async (_req, res) => {
   }
 });
 
-// Logout real: el servidor olvida el token
 app.post('/api/auth/logout', (req, res) => {
   sesiones.delete(leerToken(req));
   res.json({ ok: true });

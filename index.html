@@ -137,9 +137,21 @@
     <!-- VISTA: PERFIL -->
     <section id="vista-perfil" class="vista oculta">
       <div class="perfil-cabecera">
-        <img id="perfil-foto" src="img/perfil1.jpg" alt="Foto de perfil">
+        <div>
+          <img id="perfil-foto" class="perfil-foto" src="img/avatares/Avatar1.jpeg" alt="Foto de perfil">
+          <button id="btn-cambiar-foto" type="button">Cambiar foto</button>
+          <div id="selector-avatares" class="selector-avatares" hidden></div>
+        </div>
         <div>
           <h2 id="perfil-nombre"></h2>
+          <button id="btn-editar-nombre" type="button">Editar nombre</button>
+
+          <div id="form-nombre" hidden>
+            <input id="input-nombre" type="text" maxlength="30" placeholder="Nuevo nombre">
+            <button id="btn-guardar-nombre" type="button">Guardar</button>
+            <button id="btn-cancelar-nombre" type="button">Cancelar</button>
+          </div>
+
           <p id="perfil-nick"></p>
           <p id="perfil-email"></p>
           <p id="perfil-edad"></p>

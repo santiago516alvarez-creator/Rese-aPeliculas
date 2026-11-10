@@ -3,8 +3,6 @@ interface Pelicula {
   id: number; titulo: string; genero: string; anio: number; sinopsis: string;
   imagen_url: string; estado: 'estreno' | 'cartelera' | 'finalizado';
 }
-interface Producto { id: number; nombre_producto: string; descripcion: string; precio: string; imagen_url: string; }
-interface Promocion { id: number; titulo: string; descripcion: string; imagen_url: string; fecha_fin: string; }
 interface Resenia { id: number; puntuacion: number; comentario: string; fecha: string; nick: string; }
 interface UsuarioSesion { id: number; nick: string; nombre: string; email: string; foto_perfil: string; edad: number; }
 interface Usuario extends UsuarioSesion { vistas: number; likes: number; espera: number; contribuido: number; }
@@ -19,7 +17,7 @@ function leerSesionGuardada(): UsuarioSesion | null {
   try {
     return JSON.parse(localStorage.getItem('usuarioSesion') || 'null');
   } catch {
-    return null; // si el localStorage está corrupto, se ignora
+    return null;
   }
 }
 
@@ -28,14 +26,13 @@ let tokenSesion: string | null = localStorage.getItem('tokenSesion');
 let peliculaActual = 0;
 let filtroActual = '';
 let tabPerfilActual = 'resenias';
-let contadorPeticionTab = 0; // para ignorar respuestas viejas al cambiar de pestaña
+let contadorPeticionTab = 0;
 
 // ===== UTILIDADES =====
 function $(id: string): HTMLElement {
   return document.getElementById(id) as HTMLElement;
 }
 
-// Todas las llamadas a la API pasan por aquí: agrega el token y maneja errores y sesión vencida
 async function api<T>(url: string, opciones: RequestInit = {}): Promise<T> {
   const cabeceras = new Headers(opciones.headers);
   if (tokenSesion) cabeceras.set('Authorization', `Bearer ${tokenSesion}`);
@@ -44,7 +41,6 @@ async function api<T>(url: string, opciones: RequestInit = {}): Promise<T> {
   const respuesta = await fetch(url, { ...opciones, headers: cabeceras });
 
   if (respuesta.status === 401 && tokenSesion) {
-    // El servidor ya no reconoce el token (por ejemplo, se reinició)
     limpiarSesionLocal();
     irA('login', true);
     throw new Error('Tu sesión expiró. Inicia sesión de nuevo.');
@@ -54,6 +50,14 @@ async function api<T>(url: string, opciones: RequestInit = {}): Promise<T> {
     throw new Error((datos as { error?: string }).error ?? `Error ${respuesta.status}`);
   }
   return datos as T;
+}
+
+function limpiarFiltros(): void {
+  const buscador = $('buscador') as HTMLInputElement | null;
+  const genero = $('select-genero') as HTMLSelectElement | null;
+  if (buscador) buscador.value = '';
+  if (genero) genero.value = '';
+  filtroActual = '';
 }
 
 function crearTarjeta(imagen: string, titulo: string, extra: string, alHacerClic?: () => void): HTMLElement {
@@ -94,7 +98,6 @@ function guardarSesion(datos: RespuestaAuth): void {
   actualizarBarraNav();
 }
 
-// Borra la sesión del navegador y los datos privados que quedaron en pantalla
 function limpiarSesionLocal(): void {
   usuarioActual = null;
   tokenSesion = null;
@@ -113,15 +116,12 @@ function limpiarSesionLocal(): void {
 
 async function cerrarSesion(): Promise<void> {
   try {
-    await api('/api/auth/logout', { method: 'POST' }); // el servidor olvida el token
-  } catch {
-    // aunque falle la red, cerramos la sesión en el navegador igualmente
-  }
+    await api('/api/auth/logout', { method: 'POST' });
+  } catch {}
   limpiarSesionLocal();
   irA('login', true);
 }
 
-// Al abrir la página: comprueba que el token guardado siga siendo válido
 async function restaurarSesion(): Promise<void> {
   if (tokenSesion) {
     try {
@@ -131,20 +131,19 @@ async function restaurarSesion(): Promise<void> {
       limpiarSesionLocal();
     }
   } else if (usuarioActual) {
-    limpiarSesionLocal(); // sesión guardada por la versión anterior, sin token
+    limpiarSesionLocal();
   }
   actualizarBarraNav();
   enrutar();
 }
 
-// ===== RUTAS (por hash: funciona el botón Atrás, sin recargar la página) =====
+// ===== RUTAS =====
 const RUTAS_VALIDAS = ['inicio', 'catalogo', 'perfil', 'pelicula', 'login', 'registro'];
 const RUTAS_PUBLICAS = ['login', 'registro'];
 
-// Cambia de ruta. Con reemplazar=true no deja la ruta anterior en el historial
 function irA(ruta: string, reemplazar = false): void {
   const destino = `#${ruta}`;
-  if (location.hash === destino) { enrutar(); return; } // misma ruta: solo refresca
+  if (location.hash === destino) { enrutar(); return; }
   if (reemplazar) location.replace(destino);
   else location.hash = destino;
 }
@@ -158,11 +157,11 @@ function enrutar(): void {
   if (haySesion && RUTAS_PUBLICAS.includes(vista)) { irA('inicio', true); return; }
 
   switch (vista) {
-    case 'inicio': mostrarVista('inicio'); cargarInicio(); break;
+    case 'inicio': limpiarFiltros(); mostrarVista('inicio'); cargarInicio(); break;
     case 'catalogo': mostrarVista('catalogo'); cargarCatalogo(); break;
-    case 'perfil': mostrarVista('perfil'); cargarPerfil(); break;
-    case 'pelicula': abrirDetalle(Number(parametro)); break;
-    default: mostrarVista(vista); // login y registro
+    case 'perfil': limpiarFiltros(); mostrarVista('perfil'); cargarPerfil(); break;
+    case 'pelicula': limpiarFiltros(); abrirDetalle(Number(parametro)); break;
+    default: limpiarFiltros(); mostrarVista(vista);
   }
 }
 
@@ -176,27 +175,11 @@ function renderizarProductos(contenedorId: string, peliculas: Pelicula[]): void 
   );
 }
 
-function renderizarConfiteria(productos: Producto[]): void {
-  const contenedor = $('lista-confiteria');
-  contenedor.innerHTML = '';
-  productos.forEach(p =>
-    contenedor.appendChild(crearTarjeta(p.imagen_url, p.nombre_producto, `$${p.precio} · ${p.descripcion}`)));
-}
-
-function renderizarPromos(promos: Promocion[]): void {
-  const contenedor = $('lista-promos');
-  contenedor.innerHTML = '';
-  promos.forEach(p =>
-    contenedor.appendChild(crearTarjeta(p.imagen_url, p.titulo, p.descripcion)));
-}
-
 // ===== CARGA DE DATOS =====
 async function cargarInicio(): Promise<void> {
   try {
     renderizarProductos('grilla-estrenos', await api<Pelicula[]>('/api/peliculas?estado=estreno'));
     renderizarProductos('grilla-finalizando', await api<Pelicula[]>('/api/peliculas?estado=finalizado'));
-    renderizarPromos(await api<Promocion[]>('/api/promociones'));
-    renderizarConfiteria(await api<Producto[]>('/api/confiteria'));
   } catch (error) {
     console.error(error);
   }
@@ -220,14 +203,14 @@ async function cargarGeneros(): Promise<void> {
   const select = $('select-genero') as HTMLSelectElement;
   try {
     const generos = await api<{ genero: string }[]>('/api/generos');
-    select.length = 1; // deja solo "Géneros" para no duplicar opciones
+    select.length = 1;
     generos.forEach(g => select.add(new Option(g.genero, g.genero)));
   } catch (error) {
     console.error(error);
   }
 }
 
-// ===== DETALLE DE PELÍCULA =====
+// ===== DETALLE =====
 async function abrirDetalle(id: number): Promise<void> {
   if (!id) { irA('catalogo', true); return; }
   try {
@@ -244,7 +227,7 @@ async function abrirDetalle(id: number): Promise<void> {
     await Promise.all([cargarResenias(), comprobarEstadoInteraccion()]);
   } catch (error) {
     console.error(error);
-    if (usuarioActual) irA('catalogo', true); // película inexistente: volvemos al catálogo
+    if (usuarioActual) irA('catalogo', true);
   }
 }
 
@@ -256,7 +239,6 @@ async function comprobarEstadoInteraccion(): Promise<void> {
   $('btn-accion-espera').classList.toggle('activo', estado.espera);
 }
 
-// Like y watchlist usan la misma lógica: solo cambia el botón si el servidor confirmó
 async function alternarAccion(tipo: 'like' | 'espera', botonId: string): Promise<void> {
   const boton = $(botonId);
   const accion = boton.classList.contains('activo') ? 'remove' : 'add';
@@ -283,17 +265,53 @@ async function cargarResenias(): Promise<void> {
   });
 }
 
-// ===== PERFIL =====
+// ===== PERFIL Y AVATARES =====
+const AVATARES: string[] = [
+  'img/avatares/Avatar1.jpeg',
+  'img/avatares/Avatar2.jpeg',
+  'img/avatares/Avatar3.jpeg',
+  'img/avatares/Avatar4.jpeg',
+  'img/avatares/Avatar5.jpeg',
+  'img/avatares/Avatar6.jpeg',
+];
+
+async function actualizarPerfilEnServidor(datos: { nombre?: string; foto_perfil?: string }): Promise<void> {
+  if (!usuarioActual) return;
+  try {
+    const actualizado = await api<UsuarioSesion>(`/api/usuarios/${usuarioActual.id}`, {
+      method: 'PUT',
+      body: JSON.stringify(datos)
+    });
+    usuarioActual = actualizado;
+    localStorage.setItem('usuarioSesion', JSON.stringify(actualizado));
+    cargarPerfilVisual(actualizado);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+function cargarPerfilVisual(u: UsuarioSesion): void {
+  ($('perfil-foto') as HTMLImageElement).src = u.foto_perfil || AVATARES[0];
+  $('perfil-nombre').textContent = u.nombre;
+  $('perfil-nick').textContent = `@${u.nick}`;
+  $('perfil-email').textContent = u.email;
+  $('perfil-edad').textContent = `${u.edad} años`;
+}
+
 async function cargarPerfil(): Promise<void> {
   if (!usuarioActual) return;
   try {
     const datos = await api<{ usuario: Usuario }>(`/api/usuarios/${usuarioActual.id}/perfil`);
     const u = datos.usuario;
-    ($('perfil-foto') as HTMLImageElement).src = u.foto_perfil;
-    $('perfil-nombre').textContent = u.nombre;
-    $('perfil-nick').textContent = `@${u.nick}`;
-    $('perfil-email').textContent = u.email;
-    $('perfil-edad').textContent = `${u.edad} años`;
+    usuarioActual = u;
+    localStorage.setItem('usuarioSesion', JSON.stringify(u));
+    cargarPerfilVisual(u);
+
+    // Ocultar selectores al entrar
+    const selectorAvatares = $('selector-avatares');
+    if (selectorAvatares) selectorAvatares.hidden = true;
+    const formNombre = $('form-nombre');
+    if (formNombre) formNombre.hidden = true;
 
     const contadores = $('perfil-contadores');
     contadores.innerHTML = '';
@@ -305,10 +323,56 @@ async function cargarPerfil(): Promise<void> {
     });
 
     await cargarPestanaPerfil(tabPerfilActual);
+    cargarSelectorAvatares();
   } catch (error) {
     console.error(error);
+    alert(error instanceof Error ? error.message : 'No se pudo guardar el cambio.');
   }
 }
+
+function cargarSelectorAvatares(): void {
+  const contenedor = $('selector-avatares');
+  if (!contenedor) return;
+  contenedor.innerHTML = '';
+  AVATARES.forEach((url) => {
+    const img = document.createElement('img');
+    img.src = url;
+    img.alt = 'Avatar';
+    img.className = 'avatar-opcion';
+    img.addEventListener('click', () => {
+      actualizarPerfilEnServidor({ foto_perfil: url });
+      contenedor.hidden = true;
+    });
+    contenedor.appendChild(img);
+  });
+}
+
+document.getElementById('btn-cambiar-foto')?.addEventListener('click', () => {
+  const selector = $('selector-avatares');
+  if (selector) selector.hidden = !selector.hidden;
+});
+
+document.getElementById('btn-editar-nombre')?.addEventListener('click', () => {
+  const form = $('form-nombre');
+  if (form) form.hidden = !form.hidden;
+});
+
+document.getElementById('btn-guardar-nombre')?.addEventListener('click', () => {
+  const input = $('input-nombre') as HTMLInputElement; // id real del HTML
+  const nuevoNombre = input.value.trim();
+  if (nuevoNombre) {
+    actualizarPerfilEnServidor({ nombre: nuevoNombre });
+    input.value = '';
+    $('form-nombre').hidden = true;
+  }
+});
+
+// Cancelar: oculta el formulario sin guardar
+document.getElementById('btn-cancelar-nombre')?.addEventListener('click', () => {
+  const input = $('input-nombre') as HTMLInputElement;
+  input.value = '';
+  $('form-nombre').hidden = true;
+});
 
 function filaMensaje(cuerpo: HTMLElement, texto: string, columnas: number): void {
   const fila = document.createElement('tr');
@@ -334,7 +398,7 @@ async function cargarPestanaPerfil(tab: string): Promise<void> {
 
   try {
     const filas = await api<FilaPerfil[]>(`/api/usuarios/${usuarioActual.id}/pestana/${tab}`);
-    if (miPeticion !== contadorPeticionTab) return; // llegó tarde: ya cambiaste de pestaña
+    if (miPeticion !== contadorPeticionTab) return;
 
     cuerpo.innerHTML = '';
     if (filas.length === 0) { filaMensaje(cuerpo, 'Todavía no hay nada aquí.', columnas); return; }
@@ -361,9 +425,11 @@ async function cargarPestanaPerfil(tab: string): Promise<void> {
 }
 
 // ===== EVENTOS =====
-// Solo los botones con data-vista navegan (así "Cerrar sesión" ya no dispara el Lobby)
 document.querySelectorAll<HTMLButtonElement>('.menu button[data-vista]').forEach(boton => {
-  boton.addEventListener('click', () => irA(boton.dataset.vista ?? 'inicio'));
+  boton.addEventListener('click', () => {
+    limpiarFiltros();
+    irA(boton.dataset.vista ?? 'inicio');
+  });
 });
 
 $('btn-cerrar-sesion').addEventListener('click', cerrarSesion);
@@ -409,7 +475,6 @@ $('form-resenia').addEventListener('submit', async (e: Event) => {
   }
 });
 
-// ===== LOGIN Y REGISTRO =====
 $('form-login').addEventListener('submit', async (e: Event) => {
   e.preventDefault();
   const mensaje = $('mensaje-login');
@@ -423,7 +488,7 @@ $('form-login').addEventListener('submit', async (e: Event) => {
     });
     guardarSesion(datos);
     ($('form-login') as HTMLFormElement).reset();
-    irA('inicio', true); // reemplaza #login en el historial
+    irA('inicio', true);
   } catch (error) {
     mensaje.textContent = error instanceof Error ? error.message : 'No se pudo iniciar sesión.';
   }
